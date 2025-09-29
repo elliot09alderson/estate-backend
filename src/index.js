@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.js";
 import propertyRoutes from "./routes/properties.js";
 import adminRoutes from "./routes/admin.js";
 import feedbackRoutes from "./routes/feedback.js";
+import propertyRequirementRoutes from "./routes/propertyRequirements.js";
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/property-requirements", propertyRequirementRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
