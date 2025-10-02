@@ -61,6 +61,23 @@ const propertySchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Address cannot exceed 200 characters']
   },
+  city: {
+    type: String,
+    required: [true, 'City is required'],
+    trim: true,
+    maxlength: [100, 'City cannot exceed 100 characters']
+  },
+  state: {
+    type: String,
+    required: [true, 'State is required'],
+    trim: true,
+    maxlength: [100, 'State cannot exceed 100 characters']
+  },
+  zipCode: {
+    type: String,
+    trim: true,
+    maxlength: [10, 'Zip code cannot exceed 10 characters']
+  },
   images: {
     type: [String],
     required: [true, 'At least one image is required'],
@@ -112,6 +129,16 @@ const propertySchema = new mongoose.Schema({
   views: {
     type: Number,
     default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalRatings: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
@@ -121,6 +148,9 @@ const propertySchema = new mongoose.Schema({
 propertySchema.index({ category: 1, listingType: 1 });
 propertySchema.index({ price: 1 });
 propertySchema.index({ location: 1 });
+propertySchema.index({ city: 1 });
+propertySchema.index({ state: 1 });
+propertySchema.index({ zipCode: 1 });
 propertySchema.index({ agentId: 1 });
 propertySchema.index({ isActive: 1 });
 propertySchema.index({ isFeatured: 1 });
@@ -132,7 +162,10 @@ propertySchema.index({
   title: 'text',
   description: 'text',
   location: 'text',
-  address: 'text'
+  address: 'text',
+  city: 'text',
+  state: 'text',
+  zipCode: 'text'
 });
 
 const Property = mongoose.model('Property', propertySchema);

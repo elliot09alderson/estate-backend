@@ -42,14 +42,9 @@ class PropertyRepository {
   async findApproved(filter = {}, page = 1, limit = 10) {
     // Remove isApproved and isActive from filter if present to avoid conflicts
     const { isApproved, isActive, ...cleanFilter } = filter;
-    console.log(cleanFilter);
-    const approvedFilter = {
-      ...cleanFilter,
-      isApproved: "approved",
-      isActive: true,
-    };
-    console.log("Approved filter:", approvedFilter);
-    return await this.findAll(approvedFilter, page, limit);
+
+    // Use filterProperties method to handle complex search
+    return await this.filterProperties(cleanFilter, page, limit);
   }
 
   async findPending(page = 1, limit = 10) {
@@ -101,7 +96,47 @@ class PropertyRepository {
       query.price = { ...query.price, $gte: filters.minPrice };
     if (filters.maxPrice)
       query.price = { ...query.price, $lte: filters.maxPrice };
-    if (filters.location) query.location = new RegExp(filters.location, "i");
+
+    // Enhanced search functionality for location field
+    if (filters.location) {
+      const searchTerm = filters.location.trim();
+
+      // Split search term by spaces and create OR conditions for each part
+      const searchParts = searchTerm.split(/\s+/).filter(part => part.length > 0);
+
+      if (searchParts.length > 0) {
+        // Create OR conditions for each search part across all fields
+        const orConditions = [];
+
+        searchParts.forEach(part => {
+          orConditions.push(
+            { title: new RegExp(part, "i") },
+            { description: new RegExp(part, "i") },
+            { location: new RegExp(part, "i") },
+            { address: new RegExp(part, "i") },
+            { city: new RegExp(part, "i") },
+            { state: new RegExp(part, "i") },
+            { zipCode: new RegExp(part, "i") },
+            { agentName: new RegExp(part, "i") },
+            { agentPhone: new RegExp(part, "i") },
+            { category: new RegExp(part, "i") },
+            { listingType: new RegExp(part, "i") }
+          );
+
+          // Try to parse each part as number for price search
+          const numericValue = parseFloat(part);
+          if (!isNaN(numericValue)) {
+            orConditions.push(
+              { price: numericValue },
+              { price: { $gte: numericValue - 100000, $lte: numericValue + 100000 } }
+            );
+          }
+        });
+
+        query.$or = orConditions;
+      }
+    }
+
     if (filters.minArea) query.area = { ...query.area, $gte: filters.minArea };
     if (filters.maxArea) query.area = { ...query.area, $lte: filters.maxArea };
     if (filters.bedrooms) query.bedrooms = { $gte: filters.bedrooms };

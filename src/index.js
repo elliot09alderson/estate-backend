@@ -12,6 +12,9 @@ import propertyRoutes from "./routes/properties.js";
 import adminRoutes from "./routes/admin.js";
 import feedbackRoutes from "./routes/feedback.js";
 import propertyRequirementRoutes from "./routes/propertyRequirements.js";
+import tourRoutes from "./routes/tourRoutes.js";
+import messageRoutes from "./routes/messages.js";
+import ratingRoutes from "./routes/ratings.js";
 
 dotenv.config();
 
@@ -75,6 +78,9 @@ app.use("/api/properties", propertyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/property-requirements", propertyRequirementRoutes);
+app.use("/api/tours", tourRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/ratings", ratingRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
