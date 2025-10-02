@@ -54,7 +54,8 @@ app.use(
       process.env.FRONTEND_URL || "http://localhost:8080",
       "http://localhost:5173",
       "https://estate-frontend-delta.vercel.app",
-      "https://estate-backend-th8i.onrender.com"
+      "https://estate-frontend-vxn5.vercel.app",
+      "https://estate-backend-th8i.onrender.com",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
