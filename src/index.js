@@ -55,15 +55,33 @@ app.use(
   })
 );
 
+// Enhanced CORS configuration with debugging
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "http://localhost:8080",
+  "http://localhost:5173",
+  "https://estate-frontend-delta.vercel.app",
+  "https://estate-frontend-vxn5.vercel.app",
+  "https://ontend-vxn5.vercel.app",  // Correct frontend domain
+  "https://estate-backend-th8i.onrender.com",
+];
+
+console.log('🌐 CORS allowed origins:', allowedOrigins);
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL || "http://localhost:8080",
-      "http://localhost:5173",
-      "https://estate-frontend-delta.vercel.app",
-      "https://estate-frontend-vxn5.vercel.app",
-      "https://estate-backend-th8i.onrender.com",
-    ],
+    origin: (origin, callback) => {
+      console.log('🔍 CORS request from origin:', origin);
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        console.log('✅ CORS allowed for:', origin);
+        return callback(null, true);
+      } else {
+        console.log('❌ CORS rejected for:', origin);
+        return callback(new Error('Not allowed by CORS'), false);
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
