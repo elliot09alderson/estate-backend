@@ -21,12 +21,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy for deployed environments (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200, // Increased for mobile uploads
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for file uploads to prevent mobile issues
+    return req.path.includes('/upload') || req.path.includes('/properties');
+  }
 });
 
 app.use(
@@ -66,8 +73,18 @@ app.use(
 app.use(limiter);
 app.use(morgan("combined"));
 app.use(cookieParser());
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Increased limits for mobile image uploads
+app.use(express.json({
+  limit: "50mb",
+  parameterLimit: 50000,
+  timeout: 300000 // 5 minutes timeout for uploads
+}));
+app.use(express.urlencoded({
+  extended: true,
+  limit: "50mb",
+  parameterLimit: 50000
+}));
 
 // Static files for uploaded images
 app.use("/uploads", express.static("uploads"));
@@ -82,7 +99,7 @@ mongoose
 app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/feedback", feedbackRoutes);
 app.use("/api/property-requirements", propertyRequirementRoutes);
 app.use("/api/tours", tourRoutes);
 app.use("/api/messages", messageRoutes);
@@ -98,10 +115,95 @@ app.use("*", (req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// Global error handler
+// Multer error handler for file uploads
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
+  // Log detailed error information
+  console.error('=== SERVER ERROR ===');
+  console.error('Timestamp:', new Date().toISOString());
+  console.error('URL:', req?.url || 'Unknown URL');
+  console.error('Method:', req?.method || 'Unknown Method');
+  console.error('User Agent:', req?.get('User-Agent') || 'Unknown User Agent');
+  console.error('Error Code:', err.code || 'No Code');
+  console.error('Error Message:', err.message || 'No Message');
+  console.error('Error Stack:', err.stack || 'No Stack Trace');
+  console.error('==================');
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    console.log('File size limit exceeded - sending client error');
+    return res.status(400).json({
+      success: false,
+      message: 'File too large. Maximum file size is 20MB per image.',
+      error: 'LIMIT_FILE_SIZE'
+    });
+  }
+
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    console.log('File count limit exceeded - sending client error');
+    return res.status(400).json({
+      success: false,
+      message: 'Too many files. Maximum 10 images allowed.',
+      error: 'LIMIT_FILE_COUNT'
+    });
+  }
+
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    console.log('Unexpected file field - sending client error');
+    return res.status(400).json({
+      success: false,
+      message: 'Unexpected field in form data.',
+      error: 'LIMIT_UNEXPECTED_FILE'
+    });
+  }
+
+  if (err.message && err.message.includes('Only image files are allowed')) {
+    console.log('Invalid file type - sending client error');
+    return res.status(400).json({
+      success: false,
+      message: 'Only image files are allowed (jpeg, jpg, png, gif, webp).',
+      error: 'INVALID_FILE_TYPE'
+    });
+  }
+
+  // Cloudinary errors
+  if (err.message && err.message.includes('Cloudinary')) {
+    console.log('Cloudinary upload error - sending client error');
+    return res.status(500).json({
+      success: false,
+      message: 'Image upload service error. Please try again.',
+      error: 'CLOUDINARY_ERROR',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+
+  // Network/timeout errors
+  if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' || err.message.includes('timeout')) {
+    console.log('Network/timeout error - sending client error');
+    return res.status(408).json({
+      success: false,
+      message: 'Upload timeout. Please check your connection and try again.',
+      error: 'NETWORK_TIMEOUT'
+    });
+  }
+
+  // MongoDB/Database errors
+  if (err.name === 'ValidationError') {
+    console.log('Database validation error - sending client error');
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid data provided. Please check all required fields.',
+      error: 'VALIDATION_ERROR',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+
+  // General error handler
+  console.log('Unhandled error - sending generic error response');
+  res.status(500).json({
+    success: false,
+    message: err.message || "Something went wrong! Please try again.",
+    error: 'INTERNAL_SERVER_ERROR',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 app.listen(PORT, () => {

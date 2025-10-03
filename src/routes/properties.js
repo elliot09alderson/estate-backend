@@ -16,7 +16,7 @@ router.post(
   '/',
   authenticateToken,
   authorizeRoles('agent', 'admin'),
-  upload.array('images', 5),
+  upload.array('images', 10),
   async (req, res, next) => {
     try {
       // If files are uploaded, process them with Cloudinary
@@ -68,10 +68,20 @@ router.post(
 
       next();
     } catch (error) {
-      console.error('Image upload error:', error);
+      console.error('=== PROPERTY UPLOAD ERROR ===');
+      console.error('Timestamp:', new Date().toISOString());
+      console.error('User:', req.user?.email || 'Unknown User');
+      console.error('Files Count:', req.files?.length || 0);
+      console.error('Error Type:', error.constructor.name);
+      console.error('Error Message:', error.message);
+      console.error('Error Stack:', error.stack);
+      console.error('=============================');
+
       return res.status(500).json({
         success: false,
-        message: error.message || 'Failed to upload images',
+        message: error.message || 'Failed to upload images. Please try again.',
+        error: 'UPLOAD_ERROR',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   },
@@ -107,15 +117,15 @@ router.post(
   '/upload',
   authenticateToken,
   authorizeRoles('agent', 'admin'),
-  upload.array('images', 5),
+  upload.array('images', 10),
   async (req, res) => {
     try {
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: false, message: 'No files uploaded' });
       }
 
-      if (req.files.length > 5) {
-        return res.status(400).json({ success: false, message: 'Maximum 5 images allowed' });
+      if (req.files.length > 10) {
+        return res.status(400).json({ success: false, message: 'Maximum 10 images allowed' });
       }
 
       const uploadPromises = req.files.map((file) => {
@@ -152,12 +162,21 @@ router.post(
         data: { images: imageUrls }
       });
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
+      console.error('=== CLOUDINARY UPLOAD ERROR ===');
+      console.error('Timestamp:', new Date().toISOString());
+      console.error('User:', req.user?.email || 'Unknown User');
+      console.error('Files Count:', req.files?.length || 0);
+      console.error('Error Type:', error.constructor.name);
+      console.error('Error Message:', error.message);
+      console.error('Error Stack:', error.stack);
+      console.error('===============================');
+
       const errorMessage = error.message || 'Failed to upload images';
       res.status(500).json({
         success: false,
         message: errorMessage,
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'CLOUDINARY_UPLOAD_ERROR',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   }

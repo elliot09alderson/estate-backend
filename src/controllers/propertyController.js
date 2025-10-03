@@ -2,19 +2,40 @@ import propertyService from "../services/propertyService.js";
 
 export const createProperty = async (req, res) => {
   try {
+    console.log('=== CREATING PROPERTY ===');
+    console.log('User:', req.user?.email || 'Unknown User');
+    console.log('User ID:', req.user?._id);
+    console.log('Property Data Keys:', Object.keys(req.body));
+    console.log('Images Count:', req.body.images?.length || 0);
+    console.log('========================');
+
     const property = await propertyService.createProperty(
       req.body,
       req.user._id
     );
+
+    console.log('Property created successfully:', property._id);
+
     res.status(201).json({
       success: true,
       message: "Property created successfully and pending approval",
       data: property,
     });
   } catch (error) {
+    console.error('=== PROPERTY CREATION ERROR ===');
+    console.error('Timestamp:', new Date().toISOString());
+    console.error('User:', req.user?.email || 'Unknown User');
+    console.error('Error Type:', error.constructor.name);
+    console.error('Error Message:', error.message);
+    console.error('Error Stack:', error.stack);
+    console.error('Request Body Keys:', Object.keys(req.body || {}));
+    console.error('==============================');
+
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: error.message || 'Failed to create property. Please try again.',
+      error: 'PROPERTY_CREATION_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
