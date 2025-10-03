@@ -88,6 +88,23 @@ class FeedbackService {
   async getPropertyAverageRating(propertyId) {
     return await feedbackRepository.getAverageRating(propertyId);
   }
+
+  async getAllFeedbacks(page = 1, limit = 10, status = null) {
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+    return await feedbackRepository.findAll(filter, page, limit);
+  }
+
+  async respondToFeedback(id, adminResponse) {
+    const feedback = await feedbackRepository.findById(id);
+    if (!feedback) {
+      throw new Error('Feedback not found');
+    }
+
+    return await feedbackRepository.updateStatus(id, 'resolved', adminResponse);
+  }
 }
 
 export default new FeedbackService();
