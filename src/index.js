@@ -110,6 +110,16 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toUTCString() });
 });
 
+// Test upload endpoint
+app.post("/api/test-upload", (req, res) => {
+  console.log("=== TEST UPLOAD REQUEST ===");
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  console.log("Files:", req.files);
+  console.log("========================");
+  res.json({ success: true, message: "Test upload endpoint reached" });
+});
+
 // 404 handler
 app.use("*", (req, res) => {
   res.status(404).json({ message: "Route not found" });
