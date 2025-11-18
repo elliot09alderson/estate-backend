@@ -114,6 +114,12 @@ router.patch(
 );
 
 router.post(
+  '/:id/track-view',
+  authenticateToken,
+  propertyController.trackPropertyView
+);
+
+router.post(
   '/upload',
   authenticateToken,
   authorizeRoles('agent', 'admin'),

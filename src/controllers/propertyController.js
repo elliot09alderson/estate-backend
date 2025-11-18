@@ -200,3 +200,19 @@ export const togglePropertyStatus = async (req, res) => {
     });
   }
 };
+
+export const trackPropertyView = async (req, res) => {
+  try {
+    const property = await propertyService.trackPropertyView(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "View tracked successfully",
+      data: { views: property.views },
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

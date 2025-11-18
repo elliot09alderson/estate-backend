@@ -110,6 +110,16 @@ class PropertyService {
 
     return await propertyRepository.updateStatus(id, !property.isActive);
   }
+
+  async trackPropertyView(id) {
+    const property = await propertyRepository.findById(id);
+    if (!property) {
+      throw new Error('Property not found');
+    }
+
+    await propertyRepository.incrementViews(id);
+    return await propertyRepository.findById(id);
+  }
 }
 
 export default new PropertyService();
