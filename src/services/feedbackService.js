@@ -23,7 +23,25 @@ class FeedbackService {
       userEmail: user.email
     };
 
-    return await feedbackRepository.create(feedbackWithUser);
+    const feedback = await feedbackRepository.create(feedbackWithUser);
+
+    // Update property rating if this feedback has a rating and propertyId
+    if (feedback.rating && feedback.propertyId) {
+      await this.updatePropertyRating(feedback.propertyId);
+    }
+
+    return feedback;
+  }
+
+  async updatePropertyRating(propertyId) {
+    // Get average rating from all feedbacks for this property
+    const ratingData = await feedbackRepository.getAverageRating(propertyId);
+
+    // Update the property with new rating data
+    await propertyRepository.update(propertyId, {
+      averageRating: ratingData.avgRating || 0,
+      totalRatings: ratingData.count || 0
+    });
   }
 
   async getFeedbackById(id) {
@@ -69,7 +87,14 @@ class FeedbackService {
       throw new Error('No valid fields to update');
     }
 
-    return await feedbackRepository.update(id, updates);
+    const updatedFeedback = await feedbackRepository.update(id, updates);
+
+    // Update property rating if rating was changed and feedback has propertyId
+    if (updates.rating && updatedFeedback.propertyId) {
+      await this.updatePropertyRating(updatedFeedback.propertyId);
+    }
+
+    return updatedFeedback;
   }
 
   async deleteFeedback(id, userId) {
@@ -82,7 +107,17 @@ class FeedbackService {
       throw new Error('You are not authorized to delete this feedback');
     }
 
-    return await feedbackRepository.delete(id);
+    const propertyId = feedback.propertyId;
+    const hadRating = feedback.rating > 0;
+
+    await feedbackRepository.delete(id);
+
+    // Update property rating if the deleted feedback had a rating
+    if (hadRating && propertyId) {
+      await this.updatePropertyRating(propertyId);
+    }
+
+    return;
   }
 
   async getPropertyAverageRating(propertyId) {
