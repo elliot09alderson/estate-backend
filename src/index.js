@@ -1,9 +1,11 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 
@@ -15,8 +17,6 @@ import propertyRequirementRoutes from "./routes/propertyRequirements.js";
 import tourRoutes from "./routes/tourRoutes.js";
 import messageRoutes from "./routes/messages.js";
 import ratingRoutes from "./routes/ratings.js";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -59,6 +59,7 @@ app.use(
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:8080",
   "http://localhost:5173",
+  "https://crimsonbricks.com",
   "https://estate-frontend-delta.vercel.app",
   "https://estate-frontend-vxn5.vercel.app",
   "https://ontend-vxn5.vercel.app",  // Correct frontend domain
