@@ -9,7 +9,7 @@ class PropertyRepository {
   async findById(id) {
     return await Property.findById(id).populate(
       "agentId",
-      "name email phone avatar"
+      "name email phone avatar averageRating totalRatings"
     );
   }
 
@@ -27,7 +27,7 @@ class PropertyRepository {
   async findAll(filter = {}, page = 1, limit = 10, sort = { createdAt: -1 }) {
     const skip = (page - 1) * limit;
     const properties = await Property.find(filter)
-      .populate("agentId", "name email phone avatar")
+      .populate("agentId", "name email phone avatar averageRating totalRatings")
       .skip(skip)
       .limit(limit)
       .sort(sort);

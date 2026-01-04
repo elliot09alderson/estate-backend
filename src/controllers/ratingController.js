@@ -1,5 +1,6 @@
 import Rating from '../models/Rating.js';
 import Property from '../models/Property.js';
+import User from '../models/User.js';
 
 // Add or update a rating
 export const addRating = async (req, res) => {
@@ -168,11 +169,48 @@ async function updatePropertyRating(propertyId) {
     const averageRating = result.length > 0 ? Math.round(result[0].averageRating * 10) / 10 : 0;
     const totalRatings = result.length > 0 ? result[0].totalRatings : 0;
 
-    await Property.findByIdAndUpdate(propertyId, {
+    const property = await Property.findByIdAndUpdate(propertyId, {
+      averageRating,
+      totalRatings
+    });
+
+    // Update the agent's aggregate rating
+    if (property && property.agentId) {
+      await updateAgentRating(property.agentId);
+    }
+  } catch (error) {
+    console.error('Update property rating error:', error);
+  }
+}
+
+// Helper function to update agent aggregate rating across all their properties
+async function updateAgentRating(agentId) {
+  try {
+    // 1. Get all properties of this agent
+    const agentProperties = await Property.find({ agentId });
+    const propertyIds = agentProperties.map(p => p._id);
+
+    // 2. Get all ratings for these properties
+    const result = await Rating.aggregate([
+      { $match: { propertyId: { $in: propertyIds } } },
+      {
+        $group: {
+          _id: null,
+          averageRating: { $avg: '$rating' },
+          totalRatings: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const averageRating = result.length > 0 ? Math.round(result[0].averageRating * 10) / 10 : 0;
+    const totalRatings = result.length > 0 ? result[0].totalRatings : 0;
+
+    // 3. Update the agent user
+    await User.findByIdAndUpdate(agentId, {
       averageRating,
       totalRatings
     });
   } catch (error) {
-    console.error('Update property rating error:', error);
+    console.error('Update agent rating error:', error);
   }
 }
